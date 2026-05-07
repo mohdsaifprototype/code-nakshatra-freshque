@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Freshque design system — laptop-first Bento Box, warm neutral surfaces,
+   confident green accent for "wealth saved", and a clear expiry color scale.
+   All colors are HSL. */
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 40 30% 97%;
+    --foreground: 150 18% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 150 18% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 18% 12%;
+
+    /* Brand: deep forest green */
+    --primary: 152 55% 24%;
+    --primary-foreground: 40 40% 97%;
+    --primary-glow: 152 50% 40%;
+
+    /* Secondary: warm clay */
+    --secondary: 30 40% 92%;
+    --secondary-foreground: 150 18% 18%;
+
+    --muted: 40 20% 93%;
+    --muted-foreground: 150 8% 38%;
+
+    --accent: 35 85% 55%;
+    --accent-foreground: 150 25% 12%;
+
+    --destructive: 0 75% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 18% 88%;
+    --input: 40 18% 88%;
+    --ring: 152 55% 30%;
+
+    --radius: 0.85rem;
+
+    /* Expiry status scale (used on chips, dots, borders) */
+    --expiry-fresh: 142 60% 38%;
+    --expiry-soon: 42 90% 50%;
+    --expiry-critical: 22 92% 52%;
+    --expiry-expired: 0 72% 48%;
+
+    /* Financial */
+    --wealth-saved: 152 55% 35%;
+    --wealth-wasted: 0 65% 50%;
+
+    /* Effects */
+    --gradient-brand: linear-gradient(135deg, hsl(152 55% 24%), hsl(168 50% 32%));
+    --gradient-loss: linear-gradient(135deg, hsl(22 92% 52%), hsl(0 72% 48%));
+    --gradient-saved: linear-gradient(135deg, hsl(152 55% 35%), hsl(168 60% 42%));
+    --gradient-tile: linear-gradient(180deg, hsl(0 0% 100%), hsl(40 25% 96%));
+
+    --shadow-tile: 0 1px 0 hsl(40 18% 88%), 0 8px 24px -16px hsl(150 18% 12% / 0.18);
+    --shadow-tile-hover: 0 1px 0 hsl(40 18% 86%), 0 14px 32px -18px hsl(150 18% 12% / 0.28);
+    --shadow-glow: 0 0 0 1px hsl(152 55% 24% / 0.08), 0 12px 36px -12px hsl(152 55% 24% / 0.35);
+
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 150 22% 14%;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 35 85% 55%;
+    --sidebar-primary-foreground: 150 25% 12%;
+    --sidebar-accent: 150 22% 20%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 150 22% 20%;
+    --sidebar-ring: 35 85% 55%;
+  }
+
+  .dark {
+    --background: 150 18% 8%;
+    --foreground: 40 25% 95%;
+
+    --card: 150 18% 12%;
+    --card-foreground: 40 25% 95%;
+
+    --popover: 150 18% 12%;
+    --popover-foreground: 40 25% 95%;
+
+    --primary: 152 55% 50%;
+    --primary-foreground: 150 25% 8%;
+    --primary-glow: 152 55% 60%;
+
+    --secondary: 150 12% 18%;
+    --secondary-foreground: 40 25% 95%;
+
+    --muted: 150 12% 16%;
+    --muted-foreground: 40 10% 65%;
+
+    --accent: 35 85% 60%;
+    --accent-foreground: 150 25% 12%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 40 25% 95%;
+
+    --border: 150 12% 20%;
+    --input: 150 12% 20%;
+    --ring: 152 55% 50%;
+
+    --gradient-tile: linear-gradient(180deg, hsl(150 18% 13%), hsl(150 18% 11%));
+    --shadow-tile: 0 1px 0 hsl(150 12% 20%), 0 10px 24px -16px hsl(0 0% 0% / 0.5);
+    --shadow-tile-hover: 0 1px 0 hsl(150 12% 22%), 0 14px 32px -18px hsl(0 0% 0% / 0.7);
+
+    --sidebar-background: 150 22% 8%;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 35 85% 55%;
+    --sidebar-primary-foreground: 150 25% 12%;
+    --sidebar-accent: 150 22% 14%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 150 22% 14%;
+    --sidebar-ring: 35 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Tabular numerics for ₹ values */
+  .num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* Display headline treatment */
+  .display {
+    font-family: 'Fraunces', 'Playfair Display', ui-serif, Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .bento-tile {
+    @apply relative rounded-2xl border bg-card p-5 transition-all;
+    background: var(--gradient-tile);
+    box-shadow: var(--shadow-tile);
+  }
+  .bento-tile:hover {
+    box-shadow: var(--shadow-tile-hover);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
