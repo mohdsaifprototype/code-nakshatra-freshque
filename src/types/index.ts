@@ -59,7 +59,7 @@ export interface Recipe {
   usedIngredients: string[];
   missedIngredients: string[];
   vegetarian: boolean;
-  source: "spoonacular" | "gemini_remix" | "ollama_remix";
+  source: "spoonacular" | "gemini_remix";
   nutrition: Nutrition; // per serving
   instructions?: string; // AI generated cooking steps
 }

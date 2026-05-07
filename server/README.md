@@ -1,6 +1,6 @@
 # Freshque API
 
-Node 20+ · Express · MongoDB · JWT auth · Gemini (multimodal receipt OCR) · Ollama (recipe generation/remix) · Spoonacular · VAPID web push.
+Node 20+ · Express · MongoDB · JWT auth · Gemini (multimodal receipt OCR + recipe generation/remix) · Spoonacular · VAPID web push.
 
 ## Setup
 
@@ -13,7 +13,7 @@ npm run dev
 ```
 
 The API listens on `PORT` (default 4000).
-For local AI recipes, also set `OLLAMA_HOST` (default `http://localhost:11434`) and `OLLAMA_MODEL` (default `gemma:2b`) in `server/.env`.
+Set `GEMINI_API_KEY` in `server/.env` to enable AI-based receipt extraction and recipe generation/remix.
 
 ## Frontend wiring
 
@@ -34,8 +34,8 @@ Set `VITE_API_BASE_URL` in the Lovable project to your deployed API URL (e.g. `h
 | DELETE | `/pantry/:id` | delete |
 | POST | `/scan/receipt` | multipart `image` → Gemini extracts items |
 | GET  | `/recipes/search` | from current pantry (Spoonacular) |
-| POST | `/recipes/generate` | AI-generated recipe from pantry (Ollama) |
-| POST | `/recipes/remix` | `{ recipeId }` → Ollama substitution suggestions |
+| POST | `/recipes/generate` | AI-generated recipe from pantry (Gemini) |
+| POST | `/recipes/remix` | `{ recipeId }` → Gemini substitution suggestions |
 | POST | `/push/subscribe` | save PushSubscription |
 | GET  | `/push/vapid-key` | returns `VAPID_PUBLIC_KEY` |
 | GET  | `/stats/snapshot` | totals & potential loss |

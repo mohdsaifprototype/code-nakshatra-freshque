@@ -3,14 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { PantryItem } from "../models/PantryItem.js";
 import { findRecipesByIngredients, getRecipeInfo } from "../services/spoonacularService.js";
-import { remixRecipe as ollamaRemix, generateRecipe as ollamaGenerate } from "../services/ollamaService.js";
 import { remixRecipe as geminiRemix, generateRecipe as geminiGenerate } from "../services/geminiService.js";
-
-const getAIService = () => {
-  return process.env.AI_BACKEND === "gemini" 
-    ? { remixRecipe: geminiRemix, generateRecipe: geminiGenerate } 
-    : { remixRecipe: ollamaRemix, generateRecipe: ollamaGenerate };
-};
 
 export const recipesRouter = Router();
 recipesRouter.use(requireAuth);
@@ -40,18 +33,17 @@ recipesRouter.post("/generate", async (req, res, next) => {
       (await PantryItem.find({ userId: req.user.id, consumed: { $ne: true } }).lean()).map((i) => i.name);
     const vegetarian = req.body?.vegetarian ?? req.user.vegetarianOnly ?? false;
 
-    const { generateRecipe } = getAIService();
-    const recipe = await generateRecipe({
+    const recipe = await geminiGenerate({
       pantryNames,
       vegetarian,
     });
     
     const fullRecipe = {
       id: "ai_" + Date.now(),
-      image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80",
+      image: `https://loremflickr.com/600/400/food,${encodeURIComponent(recipe.imageSearchTerm || recipe.title)}`,
       matchPercent: 100,
       vegetarian,
-      source: process.env.AI_BACKEND === "gemini" ? "gemini_remix" : "ollama_remix",
+      source: "gemini_remix",
       ...recipe,
     };
     
@@ -88,8 +80,7 @@ recipesRouter.post("/remix", async (req, res, next) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten().fieldErrors });
     const items = await PantryItem.find({ userId: req.user.id, consumed: { $ne: true } }).lean();
-    const { remixRecipe } = getAIService();
-    const remix = await remixRecipe({
+    const remix = await geminiRemix({
       pantryNames: items.map((i) => i.name),
       recipeId: parsed.data.recipeId,
       title: parsed.data.targetTitle,

@@ -62,7 +62,7 @@ export default function Recipes() {
   const visible = [...generated, ...matches].filter((r) => {
     if (vegetarianOnly && !r.vegetarian) return false;
     if (tab === "match") return r.source === "spoonacular";
-    if (tab === "remix") return r.source === "gemini_remix" || r.source === "ollama_remix";
+    if (tab === "remix") return r.source === "gemini_remix";
     return true;
   });
 
@@ -103,7 +103,7 @@ export default function Recipes() {
             <div className="font-display text-lg text-primary flex items-center gap-2">
               <Sparkles className="size-5" /> Pure AI Generation
             </div>
-            <div className="text-sm text-muted-foreground mt-1">Not satisfied with the ideas below? Let our local AI (powered by Ollama) invent a brand new recipe specifically for you using only your current pantry ingredients.</div>
+            <div className="text-sm text-muted-foreground mt-1">Not satisfied with the ideas below? Let Gemini invent a brand new recipe specifically for you using only your current pantry ingredients.</div>
           </div>
           <Button onClick={async () => {
             setGenerating(true);
