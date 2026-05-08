@@ -2,22 +2,48 @@ import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { format, parseISO, startOfMonth } from "date-fns";
 import { formatINR } from "@/lib/pantry-utils";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 export function WealthChartTile() {
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["stats", "30d"],
+    queryFn: () => api.thirtyDay(),
+  });
+
   const data = useMemo(() => {
+    if (!stats) return [];
+    
     const byMonth: Record<string, { key: string; month: string; saved: number; wasted: number }> = {};
-    // Start empty until real stats are fetched from the backend.
-    const logs: Array<{ date: string; outcome: "consumed" | "expired"; value: number }> = [];
-    for (const l of logs) {
-      const d = parseISO(l.date);
+    
+    // Combine logs and current pantry waste
+    const logs = stats.logs || [];
+    const extraWaste = stats.currentPantryWaste || [];
+    const allEvents = [...logs, ...extraWaste];
+
+    for (const l of allEvents) {
+      const d = typeof l.date === "string" ? parseISO(l.date) : new Date(l.date);
       const key = format(startOfMonth(d), "yyyy-MM");
       const label = format(d, "MMM yy");
       if (!byMonth[key]) byMonth[key] = { key, month: label, saved: 0, wasted: 0 };
       if (l.outcome === "consumed") byMonth[key].saved += l.value;
       else byMonth[key].wasted += l.value;
     }
+
+    // If no logs, fallback to snapshots (though snapshots are daily)
+    if (Object.keys(byMonth).length === 0 && stats.snapshots?.length > 0) {
+      for (const s of stats.snapshots) {
+        const d = typeof s.date === "string" ? parseISO(s.date) : new Date(s.date);
+        const key = format(startOfMonth(d), "yyyy-MM");
+        const label = format(d, "MMM yy");
+        if (!byMonth[key]) byMonth[key] = { key, month: label, saved: 0, wasted: 0 };
+        byMonth[key].saved += s.consumedValue || 0;
+        byMonth[key].wasted += s.wastedValue || 0;
+      }
+    }
+
     return Object.values(byMonth).sort((a, b) => a.key.localeCompare(b.key));
-  }, []);
+  }, [stats]);
 
   const totals = useMemo(
     () =>
@@ -30,6 +56,12 @@ export function WealthChartTile() {
   const wastePct = totals.saved + totals.wasted > 0
     ? Math.round((totals.wasted * 100) / (totals.saved + totals.wasted))
     : 0;
+
+  if (isLoading) {
+    return (
+      <div className="bento-tile col-span-12 h-[350px] animate-pulse bg-muted/20" />
+    );
+  }
 
   return (
     <div className="bento-tile col-span-12">

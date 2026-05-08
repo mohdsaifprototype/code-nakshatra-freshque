@@ -109,7 +109,13 @@ export default function Pantry() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => consume(i.id)} title="Mark consumed">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => consume(i.id)} 
+                          disabled={status === "expired"}
+                          title={status === "expired" ? "Expired items cannot be consumed" : "Mark consumed"}
+                        >
                           <Check className="size-4" />
                         </Button>
                         <Button size="icon" variant="ghost" onClick={() => remove(i.id)} title="Delete">

@@ -18,14 +18,26 @@ export default function Recipes() {
   const [tab, setTab] = useState<"all" | "match" | "remix">("all");
   const [active, setActive] = useState<Recipe | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [generated, setGenerated] = useState<Recipe[]>([]);
+  const [saved, setSaved] = useState<Recipe[]>([]);
   const [matches, setMatches] = useState<Recipe[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
 
   const pantryNames = useMemo(
-    () => items.filter((i) => !i.consumed && !i.expired && i.quantity > 0).map((i) => i.name),
+    () => items.filter((i) => !i.consumed && !i.expired && i.quantity > 0 && expiryStatus(i.expiryDate) !== "expired").map((i) => i.name),
     [items],
   );
+
+  useEffect(() => {
+    const fetchSaved = async () => {
+      try {
+        const res = await api.listSavedRecipes();
+        setSaved(res.recipes);
+      } catch (e) {
+        console.error("Failed to load saved recipes", e);
+      }
+    };
+    fetchSaved();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,17 +66,28 @@ export default function Recipes() {
   useEffect(() => {
     const id = searchParams.get("open");
     if (!id) return;
-    const all = [...generated, ...matches];
+    const all = [...saved, ...matches];
     const found = all.find((r) => r.id === id);
     if (found) setActive(found);
-  }, [searchParams, generated, matches]);
+  }, [searchParams, saved, matches]);
 
-  const visible = [...generated, ...matches].filter((r) => {
+  const visible = [...saved, ...matches].filter((r) => {
     if (vegetarianOnly && !r.vegetarian) return false;
     if (tab === "match") return r.source === "spoonacular";
-    if (tab === "remix") return r.source === "gemini_remix";
+    if (tab === "remix") return r.source === "gemini_remix" || r.source === "ollama_remix" || r.source === "groq_remix";
     return true;
   });
+
+  const handleDelete = async (id: string) => {
+    try {
+      await api.deleteSavedRecipe(id);
+      setSaved(prev => prev.filter(r => r.id !== id));
+      setActive(null);
+      toast.success("Recipe deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete");
+    }
+  };
 
   return (
     <div className="max-w-[1400px] mx-auto animate-fade-in-up">
@@ -103,15 +126,15 @@ export default function Recipes() {
             <div className="font-display text-lg text-primary flex items-center gap-2">
               <Sparkles className="size-5" /> Pure AI Generation
             </div>
-            <div className="text-sm text-muted-foreground mt-1">Not satisfied with the ideas below? Let Gemini invent a brand new recipe specifically for you using only your current pantry ingredients.</div>
+            <div className="text-sm text-muted-foreground mt-1">Not satisfied with the ideas below? Let our AI invent a brand new recipe specifically for you using only your current pantry ingredients.</div>
           </div>
           <Button onClick={async () => {
             setGenerating(true);
             try {
               const pantryNames = items.filter(i => !i.consumed).map(i => i.name);
               const data = await api.generateRecipe(pantryNames, vegetarianOnly);
-              setGenerated(prev => [data.recipe, ...prev]);
-              toast.success("New AI recipe generated!");
+              setSaved(prev => [data.recipe, ...prev]);
+              toast.success("New AI recipe generated and saved!");
             } catch (e: any) {
               toast.error(e.message || "Failed to invent recipe");
             } finally {
@@ -168,6 +191,7 @@ export default function Recipes() {
       {active && (
         <RecipeDetail
           recipe={active}
+          onDelete={handleDelete}
           onClose={() => {
             setActive(null);
             const url = new URL(window.location.href);
@@ -180,7 +204,7 @@ export default function Recipes() {
   );
 }
 
-function RecipeDetail({ recipe, onClose }: { recipe: Recipe; onClose: () => void }) {
+function RecipeDetail({ recipe, onClose, onDelete }: { recipe: Recipe; onClose: () => void; onDelete?: (id: string) => void }) {
   const { logMeal } = useNutrition();
   const navigate = useNavigate();
   const { items, consumeItem } = usePantry();
@@ -195,6 +219,8 @@ function RecipeDetail({ recipe, onClose }: { recipe: Recipe; onClose: () => void
     fat: Math.round((n.fat || 0) * servings),
     fiber: Math.round((n.fiber || 0) * servings),
   };
+
+  const isAI = recipe.source !== "spoonacular";
 
   useEffect(() => {
     let cancelled = false;
@@ -281,8 +307,19 @@ function RecipeDetail({ recipe, onClose }: { recipe: Recipe; onClose: () => void
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4 animate-fade-in-up" onClick={onClose}>
       <div className="bg-card rounded-2xl max-w-2xl w-full overflow-hidden border shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="aspect-[16/7] overflow-hidden bg-muted">
+        <div className="aspect-[16/7] overflow-hidden bg-muted relative">
           <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" />
+          {isAI && onDelete && (
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute top-3 right-3 rounded-full opacity-80 hover:opacity-100"
+              onClick={() => onDelete(recipe.id)}
+              title="Delete generated recipe"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
         </div>
         <div className="p-5">
           <div className="font-display text-2xl">{recipe.title}</div>

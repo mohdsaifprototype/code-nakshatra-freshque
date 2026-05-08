@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { MOCK_PANTRY } from "@/lib/mock-data";
 import type { PantryItem } from "@/types";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 interface PantryContextValue {
@@ -17,13 +17,10 @@ interface PantryContextValue {
 const PantryContext = createContext<PantryContextValue | null>(null);
 const STORAGE_KEY = "freshque_pantry";
 
-function normaliseName(name: string) {
-  return name.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
 export function PantryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<PantryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const refreshPantry = useCallback(async () => {
     try {
@@ -59,46 +56,43 @@ export function PantryProvider({ children }: { children: ReactNode }) {
     try {
       await api.createItem(item);
       await refreshPantry();
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
     } catch (err) {
       console.error("Failed to add item:", err);
-      // Optimistic update fallback or just toast error
       toast.error("Could not save to server");
     }
-  }, [refreshPantry]);
+  }, [refreshPantry, queryClient]);
 
   const removeItem = useCallback(async (id: string) => {
     try {
-      // Optimistic update
       setItems((prev) => prev.filter((i) => i.id !== id));
       await api.deleteItem(id);
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
     } catch (err) {
       console.error("Failed to remove item:", err);
       toast.error("Failed to delete from server");
-      refreshPantry(); // Revert to server state
+      refreshPantry();
     }
-  }, [refreshPantry]);
+  }, [refreshPantry, queryClient]);
 
 
   const consumeItem = useCallback(async (id: string) => {
     try {
-      // Optimistic update
       setItems((prev) => prev.filter((i) => i.id !== id));
       await api.consumeItem(id);
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
     } catch (err) {
       console.error("Failed to consume item:", err);
       toast.error("Failed to update server");
       refreshPantry();
     }
-  }, [refreshPantry]);
+  }, [refreshPantry, queryClient]);
 
 
   const updateItem = useCallback(async (id: string, patch: Partial<PantryItem>) => {
-    // Note: patch is not explicitly in API yet, but we can implement it or use createItem as update if backend supports it.
-    // For now, let's just update local state if no API endpoint exists, or assume API exists.
     try {
-      // Assuming api.updateItem exists or similar
-      // await api.updateItem(id, patch);
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+      // Note: backend update not implemented in this context snippet, but would invalidate here too.
     } catch (err) {
       console.error("Failed to update item:", err);
     }

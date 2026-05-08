@@ -65,4 +65,6 @@ export const api = {
   // Stats
   snapshot: () => request("/stats/snapshot"),
   thirtyDay: () => request("/stats/30d"),
+  listSavedRecipes: () => request<{ recipes: Recipe[] }>("/recipes/saved"),
+  deleteSavedRecipe: (id: string) => request(`/recipes/saved/${id}`, { method: "DELETE" }),
 };

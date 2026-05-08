@@ -1,7 +1,9 @@
 import { Router } from "express";
 import multer from "multer";
 import { requireAuth } from "../middleware/auth.js";
-import { extractItemsFromReceipt } from "../services/ocrService.js";
+import { extractItemsFromReceipt as tesseractScan } from "../services/ocrService.js";
+import { extractItemsFromReceipt as geminiScan } from "../services/geminiService.js";
+import { extractItemsFromReceipt as groqScan } from "../services/groqService.js";
 
 export const scanRouter = Router();
 
@@ -19,10 +21,18 @@ scanRouter.post("/receipt", upload.single("image"), async (req, res, next) => {
     }
     
     console.log("[ocr] Starting scan for:", req.file.originalname);
-    const items = await extractItemsFromReceipt({
-      buffer: req.file.buffer,
-      mimeType: req.file.mimetype,
-    });
+    const backend = process.env.OCR_BACKEND || "tesseract";
+    console.log(`[ocr] Using backend: ${backend}`);
+    
+    let items;
+    if (backend === "gemini") {
+      items = await geminiScan({ buffer: req.file.buffer, mimeType: req.file.mimetype });
+    } else if (backend === "groq") {
+      items = await groqScan({ buffer: req.file.buffer, mimeType: req.file.mimetype });
+    } else {
+      items = await tesseractScan({ buffer: req.file.buffer, mimeType: req.file.mimetype });
+    }
+      
     console.log("[ocr] Successfully found items:", items.length);
     
     res.json({ items });

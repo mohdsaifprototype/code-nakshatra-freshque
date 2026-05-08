@@ -32,5 +32,19 @@ statsRouter.get("/30d", catchAsync(async (req, res) => {
     .lean();
   // Fallback: derive from consumption logs if snapshots are sparse
   const logs = await ConsumptionLog.find({ userId: req.user.id, date: { $gte: since } }).lean();
-  res.json({ snapshots: snaps, logs });
+  
+  // Real-time addition: find items currently in pantry that are expired but not yet logged (cron hasn't run)
+  const expiredInPantry = await PantryItem.find({
+    userId: req.user.id,
+    consumed: { $ne: true },
+    expiryDate: { $lt: new Date() }
+  }).lean();
+  
+  const currentPantryWaste = expiredInPantry.map(i => ({
+    date: i.expiryDate,
+    value: Math.round(i.quantity * i.pricePerUnit),
+    outcome: "expired"
+  }));
+
+  res.json({ snapshots: snaps, logs, currentPantryWaste });
 }));

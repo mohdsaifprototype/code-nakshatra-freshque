@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePantry } from "@/contexts/PantryContext";
 import { api } from "@/lib/api";
 import type { Recipe } from "@/types";
+import { expiryStatus } from "@/lib/pantry-utils";
 
 export function RecipeStripTile() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export function RecipeStripTile() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
 
   const pantryNames = useMemo(
-    () => items.filter((i) => !i.consumed && !i.expired && i.quantity > 0).map((i) => i.name),
+    () => items.filter((i) => !i.consumed && !i.expired && i.quantity > 0 && expiryStatus(i.expiryDate) !== "expired").map((i) => i.name),
     [items],
   );
 
